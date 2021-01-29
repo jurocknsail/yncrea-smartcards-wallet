@@ -42,9 +42,15 @@ public class WalletSolution extends Applet {
 	final static short SW_NEGATIVE_BALANCE = 0x6A85;
 
 	/* instance variables declaration */
-	short balance=0;
+	private short balance=0;
+	
+	private byte [] balanceout;
+
 
 	private WalletSolution (byte[] bArray, short bOffset, byte bLength){
+		
+		    balanceout = JCSystem.makeTransientByteArray((short)2, JCSystem.MEMORY_TYPE_TRANSIENT_DESELECT); 
+
 		    register();
 	} // end of the constructor
 
@@ -109,7 +115,7 @@ public class WalletSolution extends Applet {
 
 		// it is an error if the number of data bytes
 		// read does not match the number in Lc byte
-		if (byteRead != 1)
+		if (byteRead != numBytes)
 			ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 
 		// get the credit amount
@@ -134,7 +140,7 @@ public class WalletSolution extends Applet {
 	    byte numBytes = (byte)(buffer[ISO7816.OFFSET_LC]);
 	    byte byteRead = (byte)(apdu.setIncomingAndReceive());
 	  
-	    if (byteRead != 1) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+	    if (byteRead != numBytes) ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
 	  
 	    // get debit amount
 	    byte debitAmount = buffer[ISO7816.OFFSET_CDATA];
@@ -165,15 +171,14 @@ public class WalletSolution extends Applet {
 	    //returned
 	    apdu.setOutgoingLength((byte)2);
 	  
-	    // move the balance data into the APDU buffer
+	    // move the balance data into the apduout array
 	    // starting at the offset 0
-	    buffer[0] = (byte)(balance >> 8);
-	    buffer[1] = (byte)(balance & 0xFF);
+	    balanceout[0] = (byte)(balance >> 8);
+	    balanceout[1] = (byte)(balance & 0xFF);
 	  
 	    // send the 2-balance byte at the offset
 	    // 0 in the apdu buffer
-	    apdu.sendBytes((short)0, (short)2);
-  
+	    apdu.sendBytesLong(balanceout, (short)0, (short)2);  
   
   } // end of getBalance method
 
